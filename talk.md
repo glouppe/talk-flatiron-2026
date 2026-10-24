@@ -663,7 +663,7 @@ This is a reanalysis, the first task we ask of this prior. It will not be the la
 ---
 class: middle
 
-## Beyond Gaussian likelihoods
+## Beyond Gaussian observation models
 
 <div class="boxes">
 <div class="box">
