@@ -610,7 +610,33 @@ An autoencoder compresses each atmospheric state $x$ 450 times into a latent sta
 
 Based on this idea, we built Appa, for the global atmosphere. An autoencoder compresses each state 450 times. A latent diffusion model, with a billion parameters, generates trajectories in that compressed space. Data assimilation then happens in latent space, at the scale of the whole Earth.
 
-The observations act on the decoded state, so the observation model becomes $y = \mathcal{A}(D(z)) + \eta$. The likelihood score is computed with MMPS, through the decoder. A new observation network requires no retraining.
+
+---
+
+class: middle
+
+.avatars[![](figures/faces/gerome.jpg)![](figures/faces/sacha.jpg)![](figures/faces/frozet.jpg)![](figures/faces/victor.jpg)![](figures/faces/omer.jpg)![](figures/faces/mathias.jpg)![](figures/faces/elise.jpg)]
+
+## Posterior sampling in latent space
+
+The observations constrain the decoded state, so the likelihood of a latent state is
+$$p(y | z) = \mathcal{N}\big(y \mid \mathcal{A}(D(z)), \Sigma\_y\big).$$
+At each step, the observation operator and the decoder are linearized together, around the denoiser's estimate $\hat{z} = \mathbb{E}[z | z\_t]$,
+$$\mathcal{A}(D(z)) \approx \mathcal{A}(D(\hat{z})) + J (z - \hat{z}), \quad J = \nabla\_z \mathcal{A}(D(z)) \big|\_{z = \hat{z}}.$$
+MMPS then applies, with $J$ in place of $A$,
+$$\textcolor{#d62728}{\nabla\_{z\_t} \log p(y | z\_t)} \approx \nabla\_{z\_t} \mathbb{E}[z | z\_t]^\top J^\top \big(\Sigma\_y + J \mathbb{V}[z | z\_t] J^\top\big)^{-1} \big(y - \mathcal{A}(D(\hat{z}))\big).$$
+
+.footnote[Credits: [Andry et al](https://arxiv.org/abs/2504.18720), NeurIPS ML4PS workshop 2025 (arXiv:2504.18720).]
+
+???
+
+Posterior sampling runs in latent space, but the observations are of the atmosphere, not of the latent state. The observation model therefore includes the decoder. The likelihood of a latent state is Gaussian around the decoded, then observed, state.
+
+This model is not linear, even when the instrument is, because the decoder is a deep network. So, at each step, we linearize the observation operator and the decoder together, around the current estimate of the clean latent state, given by the denoiser. The Jacobian of the composition plays the role of the matrix $A$ of MMPS, and the likelihood score follows as before.
+
+The Jacobian is never formed. Conjugate gradient only needs its products with vectors, which automatic differentiation gives through the decoder.
+
+A new observation network requires no retraining. Only the operator changes.
 
 ---
 
@@ -635,22 +661,30 @@ Here is one week. Rows 1 and 4 are the truth. Rows 2 and 5 are the observations,
 This is a reanalysis, the first task we ask of this prior. It will not be the last.
 
 ---
-
 class: middle
 
-## Beyond Gaussian observations
+## Beyond Gaussian likelihoods
 
-.placeholder[
-So far, $y$ was a noisy, Gaussian, differentiable function of the state. Two cases break this:
-- the physics imposes exact constraints that a learned prior only satisfies approximately: conservation of mass and energy, $\nabla \cdot u = 0$, boundary conditions;
-- real instruments are simulators, e.g. radiative transfer from the state to satellite radiances (callback to the Earth observation slides).
-
-Could be folded into the next slide if time is short (TODO N1).
-]
+<div class="boxes">
+<div class="box">
+<p><b>Exact constraints</b></p>
+<p>$$c(x) = 0$$</p>
+<p class="smaller">conservation laws, boundary conditions</p>
+</div>
+<div class="box">
+<p><b>Simulators</b></p>
+<p>$$y = \mathcal{A}(x, \eta)$$</p>
+<p class="smaller">no likelihood, no gradients</p>
+</div>
+</div>
 
 ???
 
-So far, the observations were a noisy, Gaussian, differentiable function of the state. Two cases break this assumption. The physics imposes constraints that must hold exactly. And real instruments are simulators.
+So far, the observations were noisy, with a Gaussian likelihood around a differentiable function of the state. Two cases break this assumption, and both are common in science.
+
+First, the physics imposes constraints that must hold exactly: conservation of mass and energy, a divergence-free velocity, boundary conditions. A learned prior satisfies them only approximately.
+
+Second, real instruments are simulators. Remember the satellites: they measure radiances, and the radiative transfer model that produces them is a simulator. Its likelihood is intractable, and its gradients are often unavailable.
 
 ---
 
@@ -658,20 +692,25 @@ class: middle
 
 .avatars[![](figures/faces/omer.jpg)]
 
-## Hard constraints
+## Predict-Project-Renoise: Sampling under Hard Constraints
 
-.placeholder[
-- Physical constraints $c(x) = 0$ must hold exactly, not on average. Guidance breaks down as $\sigma\_y \to 0$; projections leave the data manifold.
-- Constrained marginal $p^{\mathcal{C}}\_t$; "draw a feasible $\hat{x}$, renoise" leaves it invariant (Prop. 3.1).
-- PPR: project through the denoiser, $x^\* = \arg\min\_x c(d\_\theta(x))$, then renoise, $M$ times. Shown as the step of slide 19 with the correction in red.
-- Figure: PPR Fig. 1 (2D marginals), optional.
-
-Credit: Rochman-Sharabi and Louppe, NeurIPS 2026 (TODO N2).
+.center[
+<video poster="figures/steer/ppr_poster.jpg" muted loop autoplay playsinline width="90%">
+<source src="figures/steer/ppr.mp4" type="video/mp4">
+</video>
 ]
+
+PPR denoises, projects through the denoiser onto $\mathcal{C} = \\{x : c(x) = 0\\}$, then renoises, several times per noise level. It targets the prior restricted to $\mathcal{C}$.
+
+.footnote[Credits: [Rochman-Sharabi and Louppe](https://arxiv.org/abs/2601.21033), NeurIPS 2026 (arXiv:2601.21033). Toy: Gaussian mixture prior, constrained to a circle.]
 
 ???
 
-Physical constraints must hold exactly. PPR projects through the denoiser, then renoises, and repeats.
+A hard constraint is the limit of a likelihood whose noise goes to zero. In that limit, guidance breaks down: the likelihood score is informative only in the immediate vicinity of the constraint, and unstable there. Projections satisfy the constraint, but they ignore the prior, leave the data manifold and collapse the modes.
+
+PPR starts from the target itself, the constrained marginal at each noise level. A kernel that draws a feasible clean state given the noisy one, then renoises it, leaves this marginal invariant. PPR approximates the first step by a projection through the denoiser: we optimize the noisy state so that its denoised version satisfies the constraint. Because the denoiser only outputs plausible states, the result stays on the data manifold. Then we renoise, and repeat.
+
+Here is a toy. The prior is a mixture of five Gaussians, in grey. The constraint is the red circle. Watch the three steps: denoise, project in red, renoise. The samples end on the circle, spread over the modes where the prior puts its mass.
 
 ---
 
@@ -679,19 +718,20 @@ class: middle
 
 .avatars[![](figures/faces/omer.jpg)]
 
-## Hard constraints on Appa
+.center.width-90[![](figures/ppr-appa.png)]
 
-.placeholder[
-- Figure: PPR Fig. 5, surface variables against lead time, PPR vs DPS, MMPS, TS, CPS, HDC.
-- Constraint through the 170M-parameter decoder, $c(z) = \lVert D(z^{12}) - y \rVert^2$, $O(10^8)$ variables.
-- Notes: on KS, more than 82% of PPR samples are feasible, against at most 1% for the baselines. No claim that a conservation law was enforced.
-
-Credit: Rochman-Sharabi and Louppe, NeurIPS 2026 (TODO N3).
-]
+.center[Appa under a hard constraint through its decoder, at noon.<br>PPR (blue) improves over all baselines.]
+.footnote[Credits: [Rochman-Sharabi and Louppe](https://arxiv.org/abs/2601.21033), NeurIPS 2026 (arXiv:2601.21033).]
 
 ???
 
-The same Appa prior, a second task: sampling under a hard constraint through the decoder.
+The same Appa prior, a second task. We constrain the decoded state at noon to match a given atmospheric state exactly, through the 170-million-parameter decoder. Each state has about $10^8$ variables.
+
+The figure shows three scores, against the lead time around noon, for five surface variables. Lower is better for the first two rows. PPR, in blue, is the best everywhere.
+
+This experiment uses an exact observation as the constraint. Enforcing the physics itself, such as conservation laws, at this scale, is still open.
+
+On the Kuramoto-Sivashinsky equation, more than 82% of PPR samples are feasible, against at most 1% for the baselines.
 
 ---
 
@@ -699,20 +739,44 @@ class: middle
 
 .avatars[![](figures/faces/gerome.jpg)![](figures/faces/thomas.jpg)![](figures/faces/frozet.jpg)]
 
-## Simulators as instruments
+## Kalman Posterior Sampling with Diffusion Priors and Simulation‑Based Likelihoods
 
-.placeholder[
-- Instrument $y = \mathcal{A}(x, \eta)$: a stochastic simulator, no likelihood, possibly no gradients.
-- KPS: draw $x^{(i)} \sim p(x | x\_t)$, simulate $y^{(i)}$, linearize from the pairs, Kalman update $x^{(i)} \leftarrow x^{(i)} + K(y - y^{(i)})$, renoise. Shown as the step of slide 19, next to PPR.
-- Figure: KPS Fig. 5, two black-hole images from one ensemble (callback to the black-hole slides).
-- Notes: InverseBench numbers; outlook to radiances in Appa.
-
-Credit: Andry, Savary, Rozet and Louppe, under review at ICLR 2027 (TODO N4).
+.center[
+<video poster="figures/steer/kps_poster.jpg" muted loop autoplay playsinline width="90%">
+<source src="figures/steer/kps.mp4" type="video/mp4">
+</video>
 ]
+
+KPS denoises, simulates $y^{(i)} = \mathcal{A}(x^{(i)}, \eta^{(i)})$, corrects each particle with a Kalman update, then renoises. No likelihood is needed.
+
+.footnote[Credits: Andry, Savary, Rozet and Louppe, under review at ICLR 2027. Toy: same prior, noisy observation of the radius.]
 
 ???
 
-Ongoing work. When the instrument is a simulator, KPS replaces the likelihood score by a Kalman update estimated from simulations.
+This is ongoing work. When the instrument is a simulator, we cannot evaluate the likelihood, and we may not have its gradients. We can only run it.
+
+KPS works with an ensemble of particles. At each noise level, each particle is denoised into a draw of the clean state. We run the simulator on it. From these simulated pairs, we fit a linear Gaussian model of the instrument, a statistical linearization, and we move each particle with a Kalman update toward the observation. Then we renoise, as in PPR, and repeat. The structure is the same: denoise, correct, renoise. Only the correction changes.
+
+The toy uses the same prior as before, and observes the radius with noise. The samples fill the red band, where the prior puts its mass.
+
+---
+
+class: middle
+
+.avatars[![](figures/faces/gerome.jpg)![](figures/faces/thomas.jpg)![](figures/faces/frozet.jpg)]
+
+.center.width-80[![](figures/kps-blackhole.png)]
+
+.center[Black-hole imaging from interferometric visibilities. Truth, posterior mean<br>and four KPS samples (16 particles), for four test images.]
+.footnote[Credits: Andry, Savary, Rozet and Louppe, under review at ICLR 2027.]
+
+???
+
+Back to the black holes of the beginning. The forward model is the interferometer: it is non-linear, and its noise is not Gaussian in image space.
+
+These are four test images of the InverseBench benchmark. For each, the truth, the posterior mean, and four posterior samples, from an ensemble of only 16 particles. The samples agree on what the data determine, the ring and its size, and differ on what they do not, the fine structure of the emission. On some instances, they differ markedly. In the paper, we check that such distinct images fit the visibilities about as well as the truth.
+
+On InverseBench, KPS with only 16 particles exceeds the best published accuracy on the two tasks where gradients are affordable, and is close to calibrated on black-hole imaging. Next, we want to use it with satellite radiances in Appa.
 
 ---
 
