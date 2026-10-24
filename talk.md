@@ -414,164 +414,6 @@ Let us now apply this recipe to three problems studied in our group. We start in
 ---
 
 class: black-slide
-background-image: url(figures/hyp-sea.png)
-background-size: cover
-
-.overlay-box.overlay-bottom-right[
-.overlay-title[Coastal hypoxia]
-
-Since 1950, over 500 coastal sites have reported hypoxia, up from fewer than 50. On the northwestern Black Sea shelf, it returns every summer.
-]
-
-.footnote[Image: [NASA Earth Observatory](https://earthobservatory.nasa.gov/images/90318/turquoise-swirls-in-the-black-sea), Norman Kuring (NASA OBPG), MODIS Aqua, May 29, 2017. Data: [Breitburg et al](https://doi.org/10.1126/science.aam7240), Science 2018.]
-
-???
-
-Oxygen-depleted waters are spreading. Since 1950, the number of coastal sites reporting hypoxia has grown from fewer than 50 to more than 500. Hypoxia kills bottom life and threatens fisheries.
-
-This is the Black Sea, seen from space. Rivers bring nutrients, which fuel these phytoplankton blooms, the turquoise swirls. On the northwestern shelf, in the upper left, the summer water column is stratified. Dead organic matter decomposes at the bottom and consumes the oxygen faster than it is renewed.
-
-Hypoxia can be reduced, by cutting the nutrients that rivers bring from agriculture and cities. But to know whether such policies work, and to protect fisheries in the meantime, we need to know where and when hypoxia occurs, every summer, over the whole shelf.
-
-Today, we cannot. Oxygen at the bottom is measured by ships and floats, at a few places and a few times a year. Satellites, on the other hand, observe the whole sea every day, but only its surface, and they do not measure oxygen at all.
-
-So the question is simple, and important. Can we detect hypoxia at the bottom of the sea from what satellites see at the surface?
-
----
-
-class: middle
-
-.avatars[![](figures/faces/victor.jpg)![](figures/faces/mg.png)]
-
-.grid[
-.kol-1-2[.center.width-95[![](figures/hyp-y-white.png)]]
-.kol-1-2[.center.width-95[![](figures/hyp-x-white.png)]]
-]
-.grid[
-.kol-1-2[.center[Surface observations $y$]]
-.kol-1-2[.center[Oxygen at depth $x$]]
-]
-
-.footnote[Credits: [Mangeleer et al](https://arxiv.org/abs/2604.25608), submitted to JAMES, 2026 (arXiv:2604.25608).]
-
-???
-
-On the left, what satellites observe at the surface, chlorophyll, salinity, temperature and sea level, each at its own resolution and noise level. This is $y$.
-
-On the right, what we want, the oxygen concentration at depth, here at four depths between the surface and 46 meters. This is $x$.
-
----
-
-class: middle
-
-.avatars[![](figures/faces/victor.jpg)![](figures/faces/mg.png)]
-
-.center.width-85[![](figures/hyp-samples-white.png)]
-
-.center[Posterior samples $x \sim p(x | y)$]
-
-.footnote[Credits: [Mangeleer et al](https://arxiv.org/abs/2604.25608), submitted to JAMES, 2026 (arXiv:2604.25608).]
-
-???
-
-We train a diffusion model on decades of simulations of the Black Sea, from a coupled physical and biogeochemical model. Each state has about 4 million variables. Then we sample from the posterior, given the surface observations.
-
-Here are the truth and three posterior samples, at four depths. Near the surface, the samples reproduce the eddies and filaments of the true oxygen field. At 15 meters, they start to disagree with each other and with the truth. At 46 meters, they look like the prior.
-
-This is physics, not a failure of the method. The mixed layer at the top is well mixed, so the surface tells us about it. Below it, the surface tells us very little. A wide posterior is the honest answer.
-
-In practice, in summer, we detect about a third of the hypoxic events over the shelf, from satellites alone. To do better at depth, we will need longer time windows, or measurements below the surface, such as Argo floats.
-
----
-
-class: black-slide
-background-image: url(figures/mar-sat.png)
-background-size: cover
-
-.overlay-box.overlay-bottom-right[
-.overlay-title[Regional downscaling]
-
-Global models resolve the atmosphere at about 30 km. Floods, crops and energy are decided at a few kilometers. Regional climate models bridge the gap, at a high computational cost.
-]
-
-.footnote[Image: [NASA Worldview](https://worldview.earthdata.nasa.gov), MODIS Terra, December 6, 2011.]
-
-???
-
-Our second example is regional weather and climate, here over Belgium. This is Belgium seen from space, on a December day, as a cold front crosses the country.
-
-Global models resolve the atmosphere at about 30 kilometers. But floods, crops or wind farms depend on what happens at a few kilometers. Regional climate models fill this gap. They take the coarse global fields at their boundaries, and resolve the finer scales over a limited region.
-
----
-
-class: middle
-
-.avatars[![](figures/faces/elise.jpg)![](figures/faces/sacha-peters.jpg)![](figures/faces/xf.png)]
-
-.grid[
-.kol-1-2[.center.width-90[![](figures/mar-era5.png)]]
-.kol-1-2[.center.width-90[![](figures/mar-gt.png)]]
-]
-.grid[
-.kol-1-2[.center[Global reanalysis (ERA5, 0.25°)]]
-.kol-1-2[.center[Regional model (MAR, 5 km)]]
-]
-
-.footnote[Credits: Faulx, Peters et al, in preparation.]
-
-???
-
-On the left, rain from the global reanalysis ERA5. On the right, the same front simulated by MAR, a regional climate model developed at the University of Liège, here run at 5 kilometers over Belgium. The front is now a thin band.
-
-MAR has three limits. It is slow, two weeks on a hundred processors for a century of climate. It is deterministic, one forcing gives one answer, although many fine-scale states are compatible with it. And it cannot use observations.
-
-MARionette addresses all three.
-
----
-
-class: middle
-
-.avatars[![](figures/faces/elise.jpg)![](figures/faces/sacha-peters.jpg)![](figures/faces/xf.png)]
-
-.center[
-<video poster="figures/videos/marionette-era5-v2_poster.jpg" muted loop autoplay playsinline style="height: 24.5em; max-width: 100%;">
-<source src="figures/videos/marionette-era5-v2.mp4" type="video/mp4">
-</video>
-]
-
-.center[MARionette, a diffusion model emulator of MAR, conditioned on ERA5.]
-
-.footnote[Credits: Faulx, Peters et al, in preparation.]
-
-???
-
-MARionette is a diffusion model trained to emulate MAR. Given the coarse ERA5 forcing, it generates hourly fields of all MAR variables at 5 kilometers, in seconds instead of hours.
-
-Here are ten days of July 2011. The top row is the ERA5 forcing, updated every six hours. Below are MAR and three MARionette samples. The samples agree on the large scales, which ERA5 determines, and differ in the details, such as where individual showers fall, which ERA5 does not determine. MARionette also generates variables that are not given as input, such as solar radiation.
-
----
-
-class: middle
-
-.avatars[![](figures/faces/elise.jpg)![](figures/faces/sacha-peters.jpg)![](figures/faces/xf.png)]
-
-.bleed[![](figures/mar-posterior.png)]
-
-.center[MARionette conditioned on 14 weather stations $y$,<br>which MAR cannot assimilate.]
-
-.footnote[Credits: Faulx, Peters et al, in preparation.]
-
-???
-
-And because MARionette is a diffusion model, we can condition it on observations, here the measurements of 14 weather stations, exactly as in the recipe. MAR cannot do this.
-
-On this evening of August 2021, one station in the center of the country records heavy rain. MAR misses it, and so does a sample without observations. The posterior sample puts a rain band over that station. These results are still preliminary.
-
-So, for Belgium, we get kilometer-scale weather in seconds, as an ensemble, and anchored to measurements.
-
----
-
-class: black-slide
 background-image: url(figures/satellite-crop.gif)
 background-size: cover
 
@@ -802,38 +644,6 @@ Here is one week. Rows 1 and 4 are the truth. Rows 2 and 5 are the observations,
 
 class: middle
 
-.avatars[![](figures/faces/thomas.jpg)![](figures/faces/frozet.jpg)]
-
-## Assimilating with a forecaster
-
-Diffusion-based forecasters such as GenCast sample the next state $p(x\_k | x\_{k-1})$. They were built to forecast, not to assimilate. Within a particle filter, posterior sampling conditions them on each new observation $y\_k$, without retraining, and tracks the current state $p(x\_k | y\_{1:k})$.
-
-.center.width-90[![](figures/faapf-crop.png)]
-
-.center[10 m zonal wind. FA-APF stays on the true trajectory, GenCast alone drifts.]
-
-.footnote[Credits: [Savary et al](https://arxiv.org/abs/2605.20028), ICML 2026 (arXiv:2605.20028).]
-
-???
-
-We end with forecasting.
-
-Today, the best weather forecasts come from machine learning models, such as GenCast from Google DeepMind, itself a diffusion model. GenCast takes the current state of the atmosphere and produces the next one. It was trained for that, and only for that. It has never seen an observation.
-
-But a forecast is only as good as its starting point. Weather centers produce that starting point with data assimilation, running continuously. Every few hours, they take the last forecast, compare it with the new observations, and correct it. The corrected state, the analysis, starts the next forecast. This cycle has run for decades, with physical models and Gaussian assumptions.
-
-We asked whether a forecaster like GenCast, which has never seen an observation, could run this cycle on its own. The answer is yes.
-
-We embed it in a particle filter, an ensemble of possible states that plays the role of the analysis. At each cycle, each member is moved forward by the forecaster, and conditioned on the new observations. That conditioning is the posterior sampling of the beginning of the talk, with GenCast as the prior. No retraining, no extra model, just the forecaster and the observations.
-
-The figure shows the result. The first row is the truth. The second is our filter, cycling with realistic observations. The third is GenCast alone, without observations. After a week, GenCast alone has drifted away from the real weather. The filter stays on track.
-
-So any diffusion-based forecaster, trained by someone else and for another purpose, can be turned into an operational data assimilation system.
-
----
-
-class: middle
-
 ## Conclusions
 
 .grid[
@@ -893,24 +703,21 @@ count: false
 
 .width-13.circle[![](figures/faces/frozet.jpg)] 
 .width-13.circle[![](figures/faces/gerome.jpg)] 
-.width-13.circle[![](figures/faces/victor.jpg)] 
-.width-13.circle[![](figures/faces/thomas.jpg)] 
-.width-13.circle[![](figures/faces/elise.jpg)] 
-.width-13.circle[![](figures/faces/sacha-peters.jpg)]
-
 .width-13.circle[![](figures/faces/fanny.jpg)] 
+.width-13.circle[![](figures/faces/thomas.jpg)] 
+.width-13.circle[![](figures/faces/omer.jpg)]
+
+.width-13.circle[![](figures/faces/victor.jpg)] 
+.width-13.circle[![](figures/faces/elise.jpg)] 
 .width-13.circle[![](figures/faces/sacha.jpg)] 
-.width-13.circle[![](figures/faces/omer.jpg)] 
-.width-13.circle[![](figures/faces/mathias.jpg)] 
-.width-13.circle[![](figures/faces/mg.png)] 
-.width-13.circle[![](figures/faces/xf.png)]
+.width-13.circle[![](figures/faces/mathias.jpg)]
 
 .width-13.circle[![](figures/faces/francois_lanusse.jpg)] 
 .width-13.circle[![](figures/faces/ruben_ohana.jpg)] 
 .width-13.circle[![](figures/faces/michael_mccabe.jpg)] 
 .width-13.circle[![](figures/faces/shirley_ho.jpg)]
 
-.smaller[François Rozet, Gérôme Andry, Victor Mangeleer, Thomas Savary, Elise Faulx, Sacha Peters, Fanny Bodart, Sacha Lewin, Omer Rochman, Matthias Pirlet, Marilaure Grégoire, Xavier Fettweis, François Lanusse, Ruben Ohana, Michael McCabe, Shirley Ho]
+.smaller[François Rozet, Gérôme Andry, Fanny Bodart, Thomas Savary, Omer Rochman, Victor Mangeleer, Elise Faulx, Sacha Lewin, Matthias Pirlet, François Lanusse, Ruben Ohana, Michael McCabe, Shirley Ho]
 
 ]
 
