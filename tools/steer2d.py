@@ -25,6 +25,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import to_rgba
+from matplotlib.collections import LineCollection
 
 plt.rcParams.update({'font.family': 'Roboto', 'mathtext.fontset': 'cm'})
 
@@ -208,6 +209,8 @@ def render(method, stages, final, out):
     ax.set_xlim(-5, 5); ax.set_ylim(-5, 5); ax.set_aspect('equal'); ax.axis('off')
     sc = ax.scatter(np.zeros(N), np.zeros(N), s=14, edgecolor='white', lw=0.4, zorder=3)
     sm = ax.scatter(np.zeros(N), np.zeros(N), s=22, facecolors='none', edgecolors=RED, lw=1.0, zorder=4)
+    lc = LineCollection([], colors=RED, linewidths=0.8, zorder=4)   # innovation y - y_i, from y_i to the band
+    ax.add_collection(lc)
 
     # Stage strip, as on the sampling slide: denoise, correction (red), renoise
     tx = fig.add_axes([0.56, 0.0, 0.44, 1.0]); tx.axis('off'); tx.set_xlim(0, 1); tx.set_ylim(0, 1)
@@ -232,6 +235,12 @@ def render(method, stages, final, out):
     def emit(P, cols, active, s, eq=None, sims=None, sims_alpha=0.0):
         sc.set_offsets(P); sc.set_facecolors(cols)
         sm.set_offsets(sims if sims is not None else np.zeros((N, 2))); sm.set_alpha(sims_alpha)
+        if sims is not None:
+            band = R * sims / np.linalg.norm(sims, axis=1, keepdims=True)
+            lc.set_segments(np.stack([sims, band], 1))
+        else:
+            lc.set_segments([])
+        lc.set_alpha(sims_alpha)
         for i, (t1, t2) in enumerate(rows):
             t1.set_alpha(1.0 if i == active else 0.25)
             for j, t in enumerate(t2):
