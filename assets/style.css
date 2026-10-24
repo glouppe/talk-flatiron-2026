@@ -810,3 +810,24 @@ img {
     border-bottom: none;
     border-top: 3px solid #888;
 }
+
+/* One denoise / renoise step, as a row of images (sampling slide) */
+.step {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6em;
+    text-align: center;
+    margin-bottom: 1em;
+}
+
+.step img {
+    width: 7em;
+    display: block;
+    margin-bottom: 0.3em;
+}
+
+.step .arrow {
+    font-size: 1.3em;
+    padding-bottom: 1.2em;
+}

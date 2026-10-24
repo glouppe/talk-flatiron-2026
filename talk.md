@@ -379,6 +379,29 @@ The best possible denoiser returns the average of all clean samples compatible w
 
 class: middle
 
+<div class="step">
+<div><img src="figures/loop/xt.png">$x_t$</div>
+<div class="arrow">$\xrightarrow{\;\text{denoise}\;}$</div>
+<div><img src="figures/loop/xhat.png">$\hat{x}$</div>
+<div class="arrow">$\xrightarrow{\;\text{renoise}\;}$</div>
+<div><img src="figures/loop/xt1.png">$x_s$</div>
+</div>
+
+In practice, the reverse process is simulated in a few dozen steps, from $t = 1$ down to $t = 0$. Each step, from $t$ to the next time $s < t$, denoises the current state with the score, by Tweedie's formula,
+$$\hat{x} = x\_t + \Sigma\_t \, s\_\theta(x\_t, t),$$
+then renoises it to the lower noise level, by sampling the Gaussian
+$$x\_s \sim p(x\_s \mid x\_t, x = \hat{x}).$$
+
+???
+
+In practice, we do not solve the reverse equation exactly. We discretize it into a few dozen noise levels, and each step does two things. First, it uses the score to compute the best guess $\hat{x}$ of the clean state. By Tweedie's formula, this is the output of the denoiser. We write it with the score, because the score is what we will modify. Then, it adds noise back, at a lower level, by sampling the Gaussian of the next noisy state given the current one and the guess. This Gaussian is known in closed form. For a diffusion $x\_t = x + \epsilon$, with $\epsilon \sim \mathcal{N}(0, \Sigma\_t)$, its mean is $\hat{x} + \Sigma\_s \Sigma\_t^{-1}(x\_t - \hat{x})$ and its covariance $\Sigma\_s - \Sigma\_s \Sigma\_t^{-1} \Sigma\_s$. Repeated, these two steps simulate the reverse equation of the previous slide. The images above are one such step.
+
+That is the whole sampler. A short loop, around a network that was trained once and is never modified. The network belongs to whoever trained it. The loop is ours, and we can change it as we like. The rest of the talk is about what to put in it.
+
+---
+
+class: middle
+
 ## Posterior sampling
 
 .center.width-90[![](figures/denoiser-y.svg)]
