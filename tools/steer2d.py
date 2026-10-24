@@ -145,12 +145,14 @@ def run_kps():
             x = sample_posterior(xt, s)
             stages.append(('denoise', xt, x, k, s))
             yi = np.linalg.norm(x, axis=1) + SIGMA_Y * rng.normal(size=N)
+            sims = x * (yi / np.linalg.norm(x, axis=1))[:, None]          # y_i, drawn at radius y_i
+            stages.append(('simulate', x, x, k, s, sims))
             A = x / np.linalg.norm(x, axis=1, keepdims=True)              # Jacobian of |x|, per particle
             V = tweedie_cov(xt, s)
             VA = np.einsum('nij,nj->ni', V, A)
             K = VA / (np.einsum('ni,ni->n', A, VA) + SIGMA_Y**2)[:, None]
             xc = x + K * (R - yi)[:, None]
-            stages.append(('correct', x, xc, k, s))
+            stages.append(('correct', x, xc, k, s, sims))
             if m < M - 1:
                 xn = xc + s * rng.normal(size=xc.shape)
                 stages.append(('renoise', xc, xn, k, s))
@@ -174,16 +176,18 @@ def prior_density(X):
 
 
 LABELS = {
-    'ppr': [('denoise', r'$\hat{x} = d_\theta(x_t, t)$'),
-            ('project', r'$x^* = \arg\min_x\ c(d_\theta(x))$'),
-            ('renoise', r'$x_t \sim p(x_t \mid x = d_\theta(x^*))$')],
-    'kps': [('denoise', r'$x^{(i)} \sim p(x \mid x_t^{(i)})$'),
-            ('Kalman update', r'$x^{(i)} \leftarrow x^{(i)} + K^{(i)}(y - y^{(i)})$'),
-            ('renoise', r'$x_t^{(i)} \sim p(x_t \mid x^{(i)})$')],
+    'ppr': [('denoise', [r'$\hat{x} = d_\theta(x_t, t)$']),
+            ('project', [r'$x^* = \arg\min_x\ c(d_\theta(x))$']),
+            ('renoise', [r'$x_t \sim p(x_t \mid x = d_\theta(x^*))$'])],
+    'kps': [('denoise', [r'$x^{(i)} \sim p(x \mid x_t^{(i)})$']),
+            ('Kalman update', [r'$y^{(i)} = \mathcal{A}(x^{(i)}, \eta^{(i)})$',
+                               r'$x^{(i)} \leftarrow x^{(i)} + K^{(i)}(y - y^{(i)})$']),
+            ('renoise', [r'$x_t^{(i)} \sim p(x_t \mid x^{(i)})$'])],
 }
 FINAL = {'ppr': r'samples $x \sim p(x \mid x \in \mathcal{C})$', 'kps': r'samples $x \sim p(x \mid y)$'}
-STAGE_ROW = {'denoise': 0, 'correct': 1, 'renoise': 2}
-STAGE_COLOR = {'denoise': BLUE, 'correct': RED, 'renoise': BLUE_NOISY}
+STAGE_ROW = {'denoise': 0, 'simulate': 1, 'correct': 1, 'renoise': 2}
+STAGE_EQ = {'simulate': 0, 'correct': -1}   # equation highlighted within the row (default: all)
+STAGE_COLOR = {'denoise': BLUE, 'simulate': BLUE, 'correct': RED, 'renoise': BLUE_NOISY}
 
 
 def render(method, stages, final, out):
@@ -203,19 +207,21 @@ def render(method, stages, final, out):
                     np.r_[(R + w) * np.sin(th), (R - w) * np.sin(th[::-1])], color=RED, alpha=a, lw=0)
     ax.set_xlim(-5, 5); ax.set_ylim(-5, 5); ax.set_aspect('equal'); ax.axis('off')
     sc = ax.scatter(np.zeros(N), np.zeros(N), s=14, edgecolor='white', lw=0.4, zorder=3)
+    sm = ax.scatter(np.zeros(N), np.zeros(N), s=22, facecolors='none', edgecolors=RED, lw=1.0, zorder=4)
 
     # Stage strip, as on the sampling slide: denoise, correction (red), renoise
     tx = fig.add_axes([0.56, 0.0, 0.44, 1.0]); tx.axis('off'); tx.set_xlim(0, 1); tx.set_ylim(0, 1)
     rows = []
-    for i, (name, eq) in enumerate(LABELS[method]):
-        y0 = 0.72 - 0.2 * i
+    y0 = 0.72
+    for i, (name, eqs) in enumerate(LABELS[method]):
         col = RED if i == 1 else 'black'
         t1 = tx.text(0.02, y0, name, fontsize=19, color=col, weight='bold', va='bottom')
-        t2 = tx.text(0.02, y0 - 0.025, eq, fontsize=17, color=col, va='top')
+        t2 = [tx.text(0.02, y0 - 0.025 - 0.08 * j, eq, fontsize=17, color=col, va='top') for j, eq in enumerate(eqs)]
         rows.append((t1, t2))
-    for i in range(2):
-        tx.annotate('', xy=(0.1, 0.72 - 0.2 * (i + 1) + 0.06), xytext=(0.1, 0.72 - 0.2 * i - 0.09),
-                    arrowprops=dict(arrowstyle='->', color='0.5', lw=1))
+        bottom = y0 - 0.09 - 0.08 * (len(eqs) - 1)
+        y0 = bottom - 0.11
+        if i < 2:
+            tx.annotate('', xy=(0.1, y0 + 0.06), xytext=(0.1, bottom), arrowprops=dict(arrowstyle='->', color='0.5', lw=1))
     lev = tx.text(0.02, 0.86, '', fontsize=18, color='black')
 
     ffmpeg = subprocess.Popen(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgba',
@@ -223,24 +229,29 @@ def render(method, stages, final, out):
                                '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '20', out],
                               stdin=subprocess.PIPE)
 
-    def emit(P, cols, active, s):
+    def emit(P, cols, active, s, eq=None, sims=None, sims_alpha=0.0):
         sc.set_offsets(P); sc.set_facecolors(cols)
+        sm.set_offsets(sims if sims is not None else np.zeros((N, 2))); sm.set_alpha(sims_alpha)
         for i, (t1, t2) in enumerate(rows):
-            a = 1.0 if i == active else 0.25
-            t1.set_alpha(a); t2.set_alpha(a)
+            t1.set_alpha(1.0 if i == active else 0.25)
+            for j, t in enumerate(t2):
+                on = i == active and (eq is None or j == eq % len(t2))
+                t.set_alpha(1.0 if on else 0.25)
         lev.set_text(r'noise level $\sigma_t = %.2f$' % s if s > 0 else FINAL[method])
         fig.canvas.draw()
         ffmpeg.stdin.write(fig.canvas.buffer_rgba().tobytes())
 
     prev = BLUE_NOISY
-    for name, a, b, k, s in stages:
+    for name, a, b, k, s, *rest in stages:
         row = STAGE_ROW[name]
+        sims = rest[0] if rest else None
         nf = max(F[1], F[0] - (F[0] - F[1]) * k // 3)
         c0, c1 = np.array(to_rgba(prev)), np.array(to_rgba(STAGE_COLOR[name]))
         for f in range(nf):
             u = (f + 1) / nf
             u = u * u * (3 - 2 * u)
-            emit((1 - u) * a + u * b, np.tile((1 - u) * c0 + u * c1, (N, 1)), row, s)
+            sa = u if name == 'simulate' else (1 - u if sims is not None else 0.0)
+            emit((1 - u) * a + u * b, np.tile((1 - u) * c0 + u * c1, (N, 1)), row, s, STAGE_EQ.get(name), sims, sa)
         prev = STAGE_COLOR[name]
     for _ in range(3 * FPS):
         emit(final, np.tile(to_rgba(RED), (N, 1)), -1, 0)
