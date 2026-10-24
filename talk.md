@@ -3,18 +3,20 @@ background-image: url(figures/title-bg.gif)
 background-size: cover
 
 .overlay-box.overlay-title-slide[
-.overlay-title[Inverting scientific images with deep generative models]
+.overlay-title[Harness, don't retrain<br>.smaller[Diffusion models as steerable priors for inverse problems]]
 
 .title-author[![](figures/faces/gilles.jpg).title-author-text[Gilles Louppe<br>.smaller[[g.louppe@uliege.be](mailto:g.louppe@uliege.be)]]]
 
-.title-footer[.smaller[AI4Sci 2026, Mainz<br>October 8, 2026]![](figures/logo-uliege-white.png)]
+.title-footer[.smaller[Flatiron Institute, New York<br>October 28, 2026]![](figures/logo-uliege-white.png)]
 ]
 
 ???
 
 Thank you for the invitation. It is a pleasure to be here.
 
-This talk is about inverse problems in science, and how diffusion models help us solve them. We will start with a few pictures, and end with the state of the ocean and of the whole atmosphere.
+This talk is about one property of diffusion models. Their sampling can be steered at inference time, without retraining. A single pretrained model then serves as the prior of many inverse problems.
+
+We will start with a few pictures of inverse problems in science. Then we will follow one of them, the state of the atmosphere, until the end of the talk.
 
 ---
 
@@ -132,6 +134,8 @@ Satellites measure infrared radiances $y$, not the state of the atmosphere.
 
 Third, weather. Satellites do not measure the atmosphere directly. They measure radiation. Here, the infrared radiation seen by the geostationary satellites, at one instant. Cold cloud tops appear white. This is the observation $y$.
 
+To go from the state of the atmosphere to these radiances, we need a radiative transfer model, a simulator in its own right. Keep it in mind. We will need it at the end.
+
 ---
 
 class: black-slide
@@ -148,7 +152,7 @@ The state $x$ of the atmosphere, here water vapour, wind, temperature and humidi
 
 ???
 
-What we really want is the atmosphere itself, at that same instant, in 3D. That is our state $x$. We show four of its variables, water vapour, wind, temperature and humidity. Recovering this state from observations is called data assimilation. We will come back to it at the end of the talk.
+What we really want is the atmosphere itself, at that same instant, in 3D. That is our state $x$. We show four of its variables, water vapour, wind, temperature and humidity. Recovering this state from observations is called data assimilation. It is the problem we will follow for the rest of the talk.
 
 ---
 
@@ -298,6 +302,8 @@ Here are the prior and the likelihood of each example.
 The likelihood is the easy part. It is the instrument, which we usually know well, a projection, a Fourier transform, a radiative transfer model, plus noise.
 
 The prior is the hard part. It is often already available, as a scientific simulator, an ocean model, a climate model, a simulation of black holes. But a simulator is a regular computer program. It runs forward and offers no way to run it backward, conditioned on an observation. In that form, the prior is of little help for inversion.
+
+For a given system, the two terms do not change at the same pace. The instrument changes: a new satellite, a new resolution, a new network of stations. The physics does not. The prior should be learned once, and reused with every new likelihood.
 
 For inference, we need a representation of the prior that we can work with. Deep generative models will give us one.
 
