@@ -402,7 +402,7 @@ That is the whole sampler. A short loop, around a network that was trained once 
 
 class: middle
 
-## Posterior sampling
+## Retrain...
 
 .center.width-90[![](figures/denoiser-y.svg)]
 
@@ -420,25 +420,27 @@ The direct approach feeds $y$ to the denoiser as an extra input, here the coarse
 
 class: middle
 
+## ... or harness
+
 .center.width-10[![](figures/icons/remote-control.png)]
 
-Instead, we keep the pretrained model and .bold[hijack] its sampling with the likelihood score,
-$$\text{d}x\_t = \Big[ f\_t x\_t - g\_t^2 \big( \underbrace{s\_\theta(x\_t, t)}\_{\text{pretrained prior}} + \underbrace{\nabla\_{x\_t} \log p(y | x\_t)}\_{\text{likelihood}} \big) \Big] \text{d}t + g\_t \text{d}w\_t.$$
-Since
-$$\nabla\_{x\_t} \log p(x\_t | y) = \nabla\_{x\_t} \log p(x\_t) + \nabla\_{x\_t} \log p(y | x\_t),$$
-this reverse process follows the posterior score, and its samples are posterior samples $x \sim p(x | y)$.
-
-.footnote[The likelihood score of the noisy state is intractable. Approximations include [DPS](https://arxiv.org/abs/2209.14687) (Chung et al, ICLR 2023) and [MMPS](https://arxiv.org/abs/2405.13712) (Rozet et al, NeurIPS 2024).]
+Instead, we keep the pretrained model and .bold[harness] its sampling. Since
+$$\nabla\_{x\_t} \log p(x\_t | \textcolor{#d62728}{y}) = \nabla\_{x\_t} \log p(x\_t) + \nabla\_{x\_t} \log p(\textcolor{#d62728}{y} | x\_t),$$
+it suffices to add the likelihood score to the prior score in the denoising step,
+$$\hat{x} = x\_t + \Sigma\_t \big( \underbrace{s\_\theta(x\_t, t)}\_{\text{pretrained prior}} + \underbrace{\textcolor{#d62728}{\nabla\_{x\_t} \log p(y | x\_t)}}\_{\text{likelihood}} \big),$$
+and to renoise as before. The loop then produces posterior samples $x \sim p(x | \textcolor{#d62728}{y})$, and the network is never retrained.
 
 ???
 
-There is a better way, and it is the main idea of this talk. We do not retrain anything.
+There is a better way, and it is the main idea of this talk. We do not retrain anything. We harness the pretrained model instead.
 
-By Bayes' rule, the score of the posterior is simply the score of the prior plus the score of the likelihood. The prior score comes from the pretrained diffusion model. The likelihood score comes from the model of the instrument. So we take the pretrained model and hijack its sampling, by adding the likelihood score at every step. Its samples become posterior samples.
+By Bayes' rule, the score of the posterior is the score of the prior plus the score of the likelihood. The prior score comes from the pretrained diffusion model. The likelihood score comes from the model of the instrument.
 
-The same prior then serves any instrument, zero-shot. Few generative models can be conditioned this simply. Diffusion models can. The one difficulty is that the likelihood score of a noisy state is intractable, but good approximations exist, such as our method, MMPS.
+So we go back to the sampling step of a few slides ago and change one term. In the denoising step, we add the likelihood score to the prior score. The renoising step does not change. The loop now produces posterior samples. Equivalently, the reverse equation is driven by the score of the posterior instead of the score of the prior.
 
-Let us now apply this recipe to three problems studied in our group. We start in the ocean.
+The network is untouched. Change the instrument, and only the red term changes. The same prior serves any instrument, zero-shot. Few generative models can be conditioned this simply. Diffusion models can.
+
+There is one catch. The likelihood score of a noisy state is intractable.
 
 ---
 
