@@ -444,6 +444,37 @@ There is one catch. The likelihood score of a noisy state is intractable.
 
 ---
 
+class: middle
+
+.avatars[![](figures/faces/frozet.jpg)![](figures/faces/gerome.jpg)![](figures/faces/francois_lanusse.jpg)]
+
+## The likelihood score
+
+The likelihood of a noisy state,
+$$p(y | x\_t) = \int p(y | x) p(x | x\_t) \text{d}x,$$
+is intractable.
+
+MMPS approximates $p(x | x\_t)$ by a Gaussian, with Tweedie's covariance,
+$$p(x | x\_t) \approx \mathcal{N}\big(x \mid \mathbb{E}[x | x\_t], \mathbb{V}[x | x\_t]\big), \quad \mathbb{V}[x | x\_t] = \Sigma\_t \nabla\_{x\_t} \mathbb{E}[x | x\_t].$$
+For $p(y | x) = \mathcal{N}(y | Ax, \Sigma\_y)$,
+$$\textcolor{#d62728}{\nabla\_{x\_t} \log p(y | x\_t)} \approx \nabla\_{x\_t} \mathbb{E}[x | x\_t]^\top A^\top \big(\Sigma\_y + A \mathbb{V}[x | x\_t] A^\top\big)^{-1} \big(y - A \mathbb{E}[x | x\_t]\big).$$
+
+.footnote[Credits: [Rozet et al](https://arxiv.org/abs/2405.13712), NeurIPS 2024 (arXiv:2405.13712). DPS: [Chung et al](https://arxiv.org/abs/2209.14687), ICLR 2023.]
+
+???
+
+The likelihood of a noisy state averages the likelihood of the clean state over all clean states compatible with the noisy one. This integral is intractable.
+
+The simplest approximation, DPS, replaces this distribution by a single point, the output of the denoiser. At high noise, this point is a poor summary. Many clean states are compatible with the noisy one, and DPS keeps only their average.
+
+Our approximation, MMPS, keeps the uncertainty. It replaces the distribution by a Gaussian. The mean is the output of the denoiser. The covariance is given by the second-order Tweedie formula, the Jacobian of the denoiser. For a Gaussian instrument, the likelihood of the noisy state is then Gaussian too, and its score has this closed form.
+
+The covariance has as many entries as the state squared, and we never build it. We only need its products with vectors, which automatic differentiation gives for the cost of a backward pass. A few iterations of conjugate gradient solve the system.
+
+This assumes a Gaussian likelihood and a linear instrument, or one we can linearize. We will come back to this assumption at the end of the talk.
+
+---
+
 class: black-slide
 background-image: url(figures/satellite-crop.gif)
 background-size: cover
