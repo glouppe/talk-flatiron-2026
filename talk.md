@@ -16,7 +16,7 @@ Thank you for the invitation. It is a pleasure to be here.
 
 This talk is about one property of diffusion models. Their sampling can be steered at inference time, without retraining. A single pretrained model then serves as the prior of many inverse problems.
 
-We will start with a few pictures of inverse problems in science. Then we will follow one of them, the state of the atmosphere, until the end of the talk.
+We will start with a few pictures of inverse problems in science. Then we will turn to one problem, the state of the atmosphere, and follow it until the end of the talk.
 
 ---
 
@@ -42,7 +42,7 @@ class: middle, black-slide, center
 
 Given $y$, we want to recover all plausible physical states $x$ that could have produced it. Here is one of them, the true flow. Many others are consistent with the same blocks. We want them all, as a distribution.
 
-This toy flow is not an exception. The same question arises whenever an instrument stands between us and the system we study. Let me show you five examples, from molecules to galaxies.
+This toy flow is not an exception. The same question arises whenever an instrument stands between us and the system we study. Let me show you three examples, from molecules to black holes.
 
 ---
 
@@ -119,44 +119,6 @@ What we would like to see instead is the knee itself, at full resolution. That i
 ---
 
 class: black-slide
-background-image: url(figures/sat-y.png)
-background-size: cover
-
-.overlay-box.overlay-intro-right[
-.overlay-title[Earth observation]
-
-Satellites measure infrared radiances $y$, not the state of the atmosphere.
-]
-
-.footnote[Data: [GridSat-B1](https://www.ncei.noaa.gov/products/gridded-geostationary-brightness-temperature), NOAA NCEI, infrared brightness temperatures, March 21, 2021, 00:00 UTC.]
-
-???
-
-Third, weather. Satellites do not measure the atmosphere directly. They measure radiation. Here, the infrared radiation seen by the geostationary satellites, at one instant. Cold cloud tops appear white. This is the observation $y$.
-
-To go from the state of the atmosphere to these radiances, we need a radiative transfer model, a simulator in its own right. Keep it in mind. We will need it at the end.
-
----
-
-class: black-slide
-background-image: url(figures/sat-x.png)
-background-size: cover
-
-.overlay-box.overlay-intro-right[
-.overlay-title[Earth observation]
-
-The state $x$ of the atmosphere, here water vapour, wind, temperature and humidity.
-]
-
-.footnote[Data: [ERA5](https://doi.org/10.1002/qj.3803) reanalysis, via [WeatherBench 2](https://github.com/google-research/weatherbench2), March 21, 2021, 00:00 UTC.]
-
-???
-
-What we really want is the atmosphere itself, at that same instant, in 3D. That is our state $x$. We show four of its variables, water vapour, wind, temperature and humidity. Recovering this state from observations is called data assimilation. It is the problem we will follow for the rest of the talk.
-
----
-
-class: black-slide
 background-image: url(figures/bh-y.png)
 background-size: cover
 
@@ -170,7 +132,7 @@ A few radio telescopes across the Earth sample the Fourier transform $y$ of the 
 
 ???
 
-Fourth, radio astronomy. The Event Horizon Telescope combines radio telescopes all over the Earth, to image the black hole at the center of the galaxy M87. Each pair of telescopes measures one Fourier coefficient of the image. As the Earth rotates, these measurements trace these tracks. This is everything that was measured on one night in April 2017. This is the observation $y$, and most of the plane is empty.
+Third, radio astronomy. The Event Horizon Telescope combines radio telescopes all over the Earth, to image the black hole at the center of the galaxy M87. Each pair of telescopes measures one Fourier coefficient of the image. As the Earth rotates, these measurements trace these tracks. This is everything that was measured on one night in April 2017. This is the observation $y$, and most of the plane is empty.
 
 ---
 
@@ -189,42 +151,6 @@ Images $x$ of M87*, all consistent with the data.
 ???
 
 From those few measurements, we want the image of the black hole. Or rather, images, because many of them fit the same data. Here are a few, each one a possible state $x$. The ring is always there. The fine details change from one to the next.
-
----
-
-class: black-slide
-background-image: url(figures/lens-y.png)
-background-size: cover
-
-.overlay-box.overlay-intro-right[
-.overlay-title[Gravitational lensing]
-
-A foreground galaxy distorts a background galaxy into an Einstein ring $y$.
-]
-
-.footnote[Credits: [Adam et al](https://arxiv.org/abs/2211.03812), NeurIPS ML4PS workshop 2022 (arXiv:2211.03812).]
-
-???
-
-Fifth, cosmology. A massive galaxy in the foreground bends the light of a more distant galaxy into a ring, an Einstein ring. This noisy ring is the observation $y$.
-
----
-
-class: black-slide
-background-image: url(figures/lens-x.png)
-background-size: cover
-
-.overlay-box.overlay-intro-right[
-.overlay-title[Gravitational lensing]
-
-Undistorted images $x$ of the background galaxy, all consistent with the data.
-]
-
-.footnote[Credits: [Adam et al](https://arxiv.org/abs/2211.03812), NeurIPS ML4PS workshop 2022 (arXiv:2211.03812).]
-
-???
-
-What we want is the galaxy as it would look without the lens. Here again, there is not a single answer, but several plausible galaxies, each a possible state $x$. Pass any of them through the lens again, and you get back the ring we observed.
 
 ---
 
@@ -283,11 +209,6 @@ class: middle
 .kol-3-8[.center[images of black holes]]
 .kol-3-8[.center[sparse Fourier sampling, noise]]
 ]
-.grid[
-.kol-1-4[.italic[Lensing]]
-.kol-3-8[.center[undistorted images of galaxies]]
-.kol-3-8[.center[lensing, telescope blur, noise]]
-]
 ]
 
 .grid[
@@ -297,7 +218,7 @@ class: middle
 
 ???
 
-Here are the prior and the likelihood of each example.
+Here are the prior and the likelihood of each example, and of the atmosphere, to which we will come back.
 
 The likelihood is the easy part. It is the instrument, which we usually know well, a projection, a Fourier transform, a radiative transfer model, plus noise.
 
@@ -402,7 +323,7 @@ That is the whole sampler. A short loop, around a network that was trained once 
 
 class: middle
 
-## Retrain...
+## Posterior sampling: retrain...
 
 .center.width-90[![](figures/denoiser-y.svg)]
 
@@ -420,7 +341,7 @@ The direct approach feeds $y$ to the denoiser as an extra input, here the coarse
 
 class: middle
 
-## ... or harness
+## ... or harness.
 
 .center.width-10[![](figures/icons/remote-control.png)]
 
@@ -480,16 +401,18 @@ background-image: url(figures/satellite-crop.gif)
 background-size: cover
 
 .overlay-box.overlay-bottom-left[
-.overlay-title[Observations $y$]
+.overlay-title[Earth observation]
 
-Every day, satellites and ground stations deliver millions of sparse, noisy and indirect measurements of the atmosphere.
+Satellites measure radiances $y$, not the state of the atmosphere.
 ]
 
 .footnote[Animation: [ESA/ATG medialab](https://www.esa.int/ESA_Multimedia), Sentinel-1.]
 
 ???
 
-Our third example is the atmosphere as a whole. Every day, satellites and weather stations deliver millions of observations. They are sparse, noisy and indirect, and they keep arriving over time. This is $y$.
+We now turn to one problem, the state of the atmosphere, and follow it until the end of the talk. Every day, satellites and weather stations deliver millions of observations. They are sparse, noisy and indirect, and they keep arriving over time. This is $y$.
+
+Satellites do not measure the state of the atmosphere. They measure radiances. To go from the state to the radiances, we need a radiative transfer model, a simulator in its own right. Keep it in mind. We will need it at the end.
 
 ---
 
@@ -498,9 +421,9 @@ background-image: url(figures/da-x.png)
 background-size: cover
 
 .overlay-box.overlay-bottom-right[
-.overlay-title[Trajectories $x\_{1:L}$]
+.overlay-title[Earth observation]
 
-Reanalyses of the past and the initial conditions of every weather forecast require the full state of the atmosphere, estimated from these observations.
+The state $x$ of the atmosphere, here the wind speed at 10 m.
 ]
 
 .footnote[Data: [ERA5](https://doi.org/10.1002/qj.3803) reanalysis, 10 m wind speed, March 21, 2021.]
@@ -526,7 +449,7 @@ Formally, the atmosphere evolves from one state to the next, following a transit
 
 This problem is as old as numerical weather prediction. The methods used operationally today, such as 4D-Var and ensemble Kalman filters, rely on Gaussian or linear assumptions about the dynamics.
 
-In our group, we asked whether a diffusion prior over trajectories, which makes no such assumption, could do the job. The next slides show how we did it, in three steps.
+We want to replace them with a diffusion prior over trajectories, which makes no such assumption, and steer it with the observations, as in the recipe. Three obstacles stand in the way. The trajectories are much longer than anything we can train on. They have billions of variables. And the physics and the instruments ask for more than the Gaussian likelihood we have assumed so far. We take them in this order.
 
 ---
 
@@ -534,17 +457,18 @@ class: middle
 
 .avatars[![](figures/faces/francois.jpg)]
 
-.center.width-100[![](figures/sda.svg)]
+.center.width-80[![](figures/sda.svg)]
 
-SDA trains a diffusion model on short windows. If the dynamics are Markovian,
+SDA trains a diffusion model on short windows only. For Markovian dynamics, the score of a long trajectory is assembled from them,
 $$\nabla\_{x\_i} \log p(x\_{1:L}) = \nabla\_{x\_i} \log p(x\_{i-k:i+k}),$$
-and approximately so for noisy $x\_{1:L}(t)$. The score of a long trajectory is thus assembled from short windows, and posterior sampling proceeds as before.
+and the posterior of the whole trajectory is sampled by adding the likelihood score of all observations,
+$$\nabla \log p(x\_{1:L}(t) | y) = \nabla \log p(x\_{1:L}(t)) + \textcolor{#d62728}{\nabla \log p(y | x\_{1:L}(t))}.$$
 
 .footnote[Credits: [Rozet and Louppe](https://arxiv.org/abs/2306.10574), NeurIPS 2023 (arXiv:2306.10574).]
 
 ???
 
-The first step is our score-based data assimilation, SDA. We train a diffusion model on short windows of a trajectory. Because the dynamics are Markovian, each state only interacts with its close neighbors in time. So the score of a long trajectory can be assembled from the scores of short windows, all computed in parallel. This is exact for clean trajectories, and approximate for noisy ones. The rest is the recipe we already know. We add the likelihood score of the observations, and the trajectories we sample become posterior trajectories, without retraining anything.
+The first step is our score-based data assimilation, SDA. It does two things at once. First, we train a diffusion model on short windows of a trajectory only. Because the dynamics are Markovian, each state only interacts with its close neighbors in time. So the score of a long trajectory can be assembled from the scores of short windows, all computed in parallel. This is exact for clean trajectories, and approximate for noisy ones. Second, we sample the posterior of the whole trajectory, given all observations at once. This is the sampling step we already know. In the denoising step, the prior score of the trajectory comes from the windows, and we add the likelihood score of the observations, approximated as before. The trajectories we sample are posterior trajectories, and nothing is retrained.
 
 ---
 
@@ -587,21 +511,25 @@ class: middle
 
 ## Long trajectories
 
-Training a diffusion model on whole trajectories $x\_{1:L}$ is too expensive for long horizons. Instead, models of short windows $x\_{i-k:i+k}$ must be composed at sampling time.
+SDA composes short windows all at once (AAO). At high noise, its score decomposition is only approximate, and observations stay local.
 
 .center.width-100[![](figures/gibbs-strategies.png)]
 
-GiBBS redraws blocks $x\_{i:j}$ from their exact conditionals $p(x\_{i:j} | x\_{i-k:i-1}, x\_{j+1:j+k}, y)$, in parallel. Unlike AR and AAO (SDA), it converges to $p(x\_{1:L} | y)$.
+.grid[
+.kol-1-3[.center.smaller[Ignores future observations.]]
+.kol-1-3[.center.smaller[Approximate at high noise.]]
+.kol-1-3[.center.smaller[Converges to $p(x\_{1:L} | y)$.]]
+]
 
-.footnote[Credits: Bodart et al, under review at ICLR 2027.]
+.footnote[Credits: Bodart, Andry, Rozet and Louppe, under review at ICLR 2027.]
 
 ???
 
 For long trajectories, such as a whole season, we cannot train a model over the whole horizon. We must compose short windows at sampling time, and how we compose them matters.
 
-Rolling out one window after the other ignores future observations, and errors accumulate. Composing all windows at once, as SDA does, has a subtler problem. Each window only sees its neighbors, so the information brought by an observation at one time step does not travel far enough. It fails to reach states far in the past or far in the future, where it should still matter.
+Rolling out one window after the other ignores future observations, and errors accumulate. Composing all windows at once, as SDA does, has a subtler problem. Its decomposition of the score is only approximate at high noise. Each window only sees its neighbors, so the information brought by an observation at one time step does not travel far enough. It fails to reach states far in the past or far in the future, where it should still matter.
 
-Our new solution, GiBBS, goes back to an old idea, Gibbs sampling. It repeatedly redraws blocks of states, given their neighbors and the observations. All blocks of the same color are redrawn in parallel, and the blocks shift from one cycle to the next. Over the cycles, the information of each observation propagates along the whole trajectory, and the chain converges to the true posterior.
+Our new solution, GiBBS, goes back to an old idea, Gibbs sampling. It repeatedly redraws blocks of states $x\_{i:j}$ from their exact conditionals $p(x\_{i:j} | x\_{i-k:i-1}, x\_{j+1:j+k}, y)$, given their neighbors and the observations. Each block is redrawn by the same sampling loop as before, a full reverse diffusion, conditioned on the few states at its borders and on the observations it contains. All blocks of the same color are redrawn in parallel, and the blocks shift from one cycle to the next. Over the cycles, the information of each observation propagates along the whole trajectory, and the chain converges to the true posterior.
 
 ---
 
@@ -613,7 +541,7 @@ class: middle
 
 .center[Posterior samples of the trajectory, given $y$.]
 
-.footnote[Credits: Bodart et al, under review at ICLR 2027.]
+.footnote[Credits: Bodart, Andry, Rozet and Louppe, under review at ICLR 2027.]
 
 ???
 
@@ -662,7 +590,7 @@ class: middle
 
 ???
 
-So we compress. A latent diffusion model learns the prior in a compressed space, much smaller than the original one, and decodes its samples back. Our work on LoLA showed that this works well for physics, even at high compression. This was a surprise. Physics is defined in the original space, through equations on the full fields, and we expected compression to break it. It does not. The latent space retains what matters for the dynamics.
+So we compress. A latent diffusion model learns the prior in a compressed space, much smaller than the original one, and decodes its samples back. Our work on LoLA showed that this works well for physics, even at high compression. This was a surprise. Physics is defined in the original space, through equations on the full fields, and we expected compression to break it. It does not. The latent space retains what matters for the dynamics. This work started here, at Flatiron, with François Lanusse, Ruben Ohana, Michael McCabe and Shirley Ho.
 
 ---
 
@@ -681,6 +609,8 @@ An autoencoder compresses each atmospheric state $x$ 450 times into a latent sta
 ???
 
 Based on this idea, we built Appa, for the global atmosphere. An autoencoder compresses each state 450 times. A latent diffusion model, with a billion parameters, generates trajectories in that compressed space. Data assimilation then happens in latent space, at the scale of the whole Earth.
+
+The observations act on the decoded state, so the observation model becomes $y = \mathcal{A}(D(z)) + \eta$. The likelihood score is computed with MMPS, through the decoder. A new observation network requires no retraining.
 
 ---
 
@@ -702,40 +632,121 @@ What Appa produces are, in effect, videos of the atmosphere. Each frame is the s
 
 Here is one week. Rows 1 and 4 are the truth. Rows 2 and 5 are the observations, satellite tracks and weather stations, sparse and scattered. Rows 3 and 6 are Appa's videos, filled in everywhere, and consistent with those observations.
 
+This is a reanalysis, the first task we ask of this prior. It will not be the last.
+
+---
+
+class: middle
+
+## Beyond Gaussian observations
+
+.placeholder[
+So far, $y$ was a noisy, Gaussian, differentiable function of the state. Two cases break this:
+- the physics imposes exact constraints that a learned prior only satisfies approximately: conservation of mass and energy, $\nabla \cdot u = 0$, boundary conditions;
+- real instruments are simulators, e.g. radiative transfer from the state to satellite radiances (callback to the Earth observation slides).
+
+Could be folded into the next slide if time is short (TODO N1).
+]
+
+???
+
+So far, the observations were a noisy, Gaussian, differentiable function of the state. Two cases break this assumption. The physics imposes constraints that must hold exactly. And real instruments are simulators.
+
+---
+
+class: middle
+
+.avatars[![](figures/faces/omer.jpg)]
+
+## Hard constraints
+
+.placeholder[
+- Physical constraints $c(x) = 0$ must hold exactly, not on average. Guidance breaks down as $\sigma\_y \to 0$; projections leave the data manifold.
+- Constrained marginal $p^{\mathcal{C}}\_t$; "draw a feasible $\hat{x}$, renoise" leaves it invariant (Prop. 3.1).
+- PPR: project through the denoiser, $x^\* = \arg\min\_x c(d\_\theta(x))$, then renoise, $M$ times. Shown as the step of slide 19 with the correction in red.
+- Figure: PPR Fig. 1 (2D marginals), optional.
+
+Credit: Rochman-Sharabi and Louppe, NeurIPS 2026 (TODO N2).
+]
+
+???
+
+Physical constraints must hold exactly. PPR projects through the denoiser, then renoises, and repeats.
+
+---
+
+class: middle
+
+.avatars[![](figures/faces/omer.jpg)]
+
+## Hard constraints on Appa
+
+.placeholder[
+- Figure: PPR Fig. 5, surface variables against lead time, PPR vs DPS, MMPS, TS, CPS, HDC.
+- Constraint through the 170M-parameter decoder, $c(z) = \lVert D(z^{12}) - y \rVert^2$, $O(10^8)$ variables.
+- Notes: on KS, more than 82% of PPR samples are feasible, against at most 1% for the baselines. No claim that a conservation law was enforced.
+
+Credit: Rochman-Sharabi and Louppe, NeurIPS 2026 (TODO N3).
+]
+
+???
+
+The same Appa prior, a second task: sampling under a hard constraint through the decoder.
+
+---
+
+class: middle
+
+.avatars[![](figures/faces/gerome.jpg)![](figures/faces/thomas.jpg)![](figures/faces/frozet.jpg)]
+
+## Simulators as instruments
+
+.placeholder[
+- Instrument $y = \mathcal{A}(x, \eta)$: a stochastic simulator, no likelihood, possibly no gradients.
+- KPS: draw $x^{(i)} \sim p(x | x\_t)$, simulate $y^{(i)}$, linearize from the pairs, Kalman update $x^{(i)} \leftarrow x^{(i)} + K(y - y^{(i)})$, renoise. Shown as the step of slide 19, next to PPR.
+- Figure: KPS Fig. 5, two black-hole images from one ensemble (callback to the black-hole slides).
+- Notes: InverseBench numbers; outlook to radiances in Appa.
+
+Credit: Andry, Savary, Rozet and Louppe, under review at ICLR 2027 (TODO N4).
+]
+
+???
+
+Ongoing work. When the instrument is a simulator, KPS replaces the likelihood score by a Kalman update estimated from simulations.
+
 ---
 
 class: middle
 
 ## Conclusions
 
+One pretrained prior, steered at inference time, never retrained:
+
 .grid[
-.kol-1-3[.center[.bold[Hypoxia]<br>.smaller[Satellites detect a third of summer hypoxic events in the Black Sea, from the surface alone.]]]
-.kol-1-3[.center[.bold[Downscaling]<br>.smaller[Kilometer-scale weather for Belgium, in seconds, anchored to ground stations.]]]
-.kol-1-3[.center[.bold[Data assimilation]<br>.smaller[Global reanalyses from sparse observations, and data assimilation with existing forecasters.]]]
+.kol-1-4[.center[.bold[Scores]<br>.smaller[MMPS keeps the uncertainty of the denoiser in the likelihood score.]]]
+.kol-1-4[.center[.bold[Time]<br>.smaller[SDA and GiBBS compose short windows into long trajectories.]]]
+.kol-1-4[.center[.bold[Constraints]<br>.smaller[PPR projects through the denoiser, then renoises.]]]
+.kol-1-4[.center[.bold[Simulators]<br>.smaller[KPS replaces the likelihood score by a Kalman update.]]]
 ]
 
 .challenge[
+- Can physical constraints be enforced at the scale of the atmosphere?
 - Can we trust a posterior when there is no ground truth to compare with?
-- What happens when the prior was learned from imperfect simulations?
-- Can priors be learned from noisy observations alone?
+- How far does a Gaussian correction go for strongly non-linear simulators?
 - Can we sample $10^{10}$ variables as fast as the weather changes?
 ]
 
 ???
 
-Let me come back to the three examples.
+We started from a pretrained prior and a sampling loop of two steps, denoise and renoise. Every method of this talk changes one part of this loop, and none retrains the network.
 
-In the Black Sea, satellites alone can now detect a third of the summer hypoxic events. Over Belgium, we get kilometer-scale weather in seconds, as an ensemble, and anchored to weather stations. And for the whole atmosphere, we can reconstruct the past from sparse observations, and turn existing forecasters into data assimilation systems.
+MMPS gives a better likelihood score, by keeping the uncertainty of the denoiser. SDA and GiBBS compose short windows into long trajectories, and GiBBS converges to the posterior. PPR enforces hard constraints, by projecting through the denoiser and renoising. KPS handles instruments that are simulators, with a Kalman update estimated from simulations.
 
-None of this is finished. Four questions keep us busy.
+PPR, KPS and GiBBS share one structure. They correct, they renoise, and they repeat. This is Gibbs sampling, at a fixed noise level or across time.
 
-Can we trust the posteriors? In science, we rarely know the true state, so we need ways to check that the uncertainty we report is the right one.
+For the atmosphere, one prior, Appa, now serves several tasks: reanalysis from sparse observations, sampling under hard constraints and, next, satellite radiances.
 
-What if the prior is wrong? A prior learned from a simulator inherits its biases, and the posterior can then be confidently wrong.
-
-Can we do without simulators? In some fields, we only have noisy and incomplete observations. Learning the prior directly from them is possible, and we have started to do it.
-
-And can we go fast enough? Weather centers assimilate hundreds of millions of observations every few hours. Our methods are not there yet.
+Four questions remain open. Can we enforce the physics itself, such as conservation laws, at the scale of the atmosphere? Can we trust the posteriors? In science, we rarely know the true state, so we need ways to check that the uncertainty we report is the right one. How far does a Gaussian correction go when the simulator is strongly non-linear? And can we go fast enough? Weather centers assimilate hundreds of millions of observations every few hours. Our methods are not there yet. Behind all of these lies one more question: what happens when the prior itself, learned from imperfect simulations, is wrong?
 
 ---
 
@@ -751,7 +762,7 @@ $$p(x | y) \propto p(x) \, p(y | x)$$
 
 I will leave you with the equation we started from.
 
-Molecules, knees, black holes, galaxies, the Black Sea, the rain over Belgium, the whole atmosphere. Very different problems, but always the same recipe. A prior for the physics of the system, learned by a diffusion model. A likelihood for the instrument. And posterior sampling, which combines them.
+Molecules, knees, black holes, the whole atmosphere. Very different problems, but always the same recipe. A prior for the physics, learned once by a diffusion model. A likelihood for the instrument, which changes from one problem to the next. And a sampling loop that combines them, which we can steer without retraining anything.
 
 Thank you.
 

@@ -831,3 +831,25 @@ img {
     font-size: 1.3em;
     padding-bottom: 1.2em;
 }
+
+/* Placeholder for a slide still to be made */
+.placeholder {
+    display: block;
+    padding: 0.8em 1.2em;
+    border: 2px dashed #b0b8bd;
+    border-radius: 5px;
+    color: #6c777d;
+    font-size: 0.85em;
+}
+
+.placeholder:before {
+    content: "PLACEHOLDER";
+    display: block;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.4em;
+}
+
+.step, .step .katex {
+    color: black;
+}
