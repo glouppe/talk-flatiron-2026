@@ -811,69 +811,12 @@ img {
     border-top: 3px solid #888;
 }
 
-/* One denoise / renoise step, as a row of images (sampling slide) */
-.step {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6em;
-    text-align: center;
-    margin-bottom: 1em;
+/* The 2D toy animations, all at the same size on every slide */
+video.anim {
+    width: 95%;
 }
 
-.step img {
-    width: 7em;
-    display: block;
-    margin-bottom: 0.3em;
-}
-
-.step .arrow {
-    font-size: 1.3em;
-    padding-bottom: 1.2em;
-}
-
-/* Placeholder for a slide still to be made */
-.placeholder {
-    display: block;
-    padding: 0.8em 1.2em;
-    border: 2px dashed #b0b8bd;
-    border-radius: 5px;
-    color: #6c777d;
-    font-size: 0.85em;
-}
-
-.placeholder:before {
-    content: "PLACEHOLDER";
-    display: block;
-    font-weight: bold;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.4em;
-}
-
-.step, .step .katex {
-    color: black;
-}
-
-/* Side-by-side boxes, e.g. two cases to contrast */
-.boxes {
-    display: flex;
-    gap: 1.5em;
-    margin-top: 1.5em;
-}
-
-.boxes .box {
-    flex: 1;
-    padding: 0.8em 1em 1em;
-    text-align: center;
-    border-top: 4px solid #356aaf;
-    border-radius: 0 0 5px 5px;
-    background-color: rgba(53, 106, 175, 0.07);
-}
-
-.boxes .box p {
-    margin: 0.3em 0;
-}
-
-.boxes b {
-    font-weight: bold;
+/* Math in footnotes at the footnote size */
+.footnote .katex {
+    font-size: 1em;
 }
